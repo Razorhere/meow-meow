@@ -117,9 +117,66 @@
     const muteFavBtn = document.getElementById('muteFavBtn');
     let favWasPlaying = false;
 
-    window.addEventListener('load', async ()=>{
-      if(localFavAudio){ try{ localFavAudio.volume = 0.18; await localFavAudio.play(); }catch(e){} }
+(function(){
+  const fav = document.getElementById('localFavAudio');
+
+  const startOverlay = document.createElement('div');
+  Object.assign(startOverlay.style, {
+    position:'fixed',
+    left:'12px',
+    bottom:'12px',
+    zIndex:10002,
+    background:'linear-gradient(90deg,#ffd08a,#ffb6d6)',
+    color:'#2a2a33',
+    padding:'10px 14px',
+    borderRadius:'12px',
+    boxShadow:'0 10px 30px rgba(0,0,0,0.18)',
+    cursor:'pointer',
+    fontWeight:'700',
+    display:'none',
+    userSelect:'none'
+  });
+  startOverlay.textContent='Tap to start music';
+  document.body.appendChild(startOverlay);
+
+  async function tryPlayFav(){
+    if(!fav) return false;
+    fav.volume = 0.18;
+    try{
+      await fav.play();
+      return !fav.paused;
+    }catch(err){
+      return false;
+    }
+  }
+
+  window.addEventListener('load', async ()=>{
+    const ok = await tryPlayFav();
+    if(!ok){
+      startOverlay.style.display='block';
+    }
+  });
+
+  startOverlay.addEventListener('click', async ()=>{
+    startOverlay.style.display='none';
+    try{
+      fav.volume=0.18;
+      await fav.play();
+    }catch(e){}
+  });
+
+  function onFirstInteraction(){
+    startOverlay.style.display='none';
+    tryPlayFav().finally(()=>{
+      window.removeEventListener('click', onFirstInteraction);
+      window.removeEventListener('keydown', onFirstInteraction);
     });
+  }
+  
+  window.addEventListener('click', onFirstInteraction);
+  window.addEventListener('keydown', onFirstInteraction);
+})();
+
 
     if(muteFavBtn){ muteFavBtn.addEventListener('click', ()=>{
       if(!localFavAudio) return; localFavAudio.muted = !localFavAudio.muted; muteFavBtn.textContent = localFavAudio.muted ? 'Unmute' : 'Mute';
